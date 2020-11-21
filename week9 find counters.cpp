@@ -77,9 +77,58 @@ int main() {
 		}
 		
 	}
-	
 	imshow("chip",chip_rgb);
 	
+	//--------------------------------------------red cap-------------------------------------------
+	Mat lid;
+	Mat det;
+	Mat lid_hsv;
+	Mat detdilate;
+	Mat element;
+	element.create(3,10,CV_8UC1);			//选择一个细长的element，以让上下的连通域联通
+	lid = imread("cap.jpg");
+	cvtColor(lid,lid_hsv,COLOR_BGR2HSV);
+
+	double  i_minH = 150;
+	double  i_maxH = 250;
+
+	double  i_minS = 43;
+	double  i_maxS = 255;
+
+	double  i_minV = 46	;
+	double  i_maxV = 255;
+
+	inRange(lid_hsv, Scalar(i_minH, i_minS, i_minV), Scalar(i_maxH, i_maxS, i_maxV), det);		//通过inRange函数选择红色区域
+	dilate(det, detdilate, element, Point(-1, -1), 3);			//连通域进行膨胀
+
+	vector<vector<Point>> lid_contours;
+	vector<Vec4i> lid_hierarchy;
+	findContours(detdilate, lid_contours, lid_hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+
+	
+
+
+
+	for (size_t i = 0; i < lid_contours.size(); i++) {
+		RotatedRect lid_rbox = minAreaRect(lid_contours[i]);
+		Size2f lid_ck = lid_rbox.size;
+		if ((lid_ck.height > 80) && (lid_ck.width > 80)) {			//筛选连通域的条件
+			Point2f lid_vtx[4];
+			lid_rbox.points(lid_vtx);
+			for (int j = 0; j < 4; j++) {
+				line(lid, lid_vtx[j], lid_vtx[j < 3 ? j + 1 : 0], Scalar(0, 255, 34), 3, 8);
+			}
+			
+		}
+	}
+	
+	imshow("结果",lid);
+	imshow("膨胀",detdilate);
+	
+	
+	imshow("检测",det);
+
+
 	waitKey(0);
 
 }
